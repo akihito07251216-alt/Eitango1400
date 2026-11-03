@@ -1,1 +1,1240 @@
+<!DOCTYPE html>
+<html lang="ja" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>LexiForge 1400</title>
+
+  <!-- PWA / ホーム画面アプリ化メタタグ -->
+  <meta name="theme-color" content="#0f172a">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="LexiForge">
+  <link id="apple-touch-icon-link" rel="apple-touch-icon" href="">
+  <link id="manifest-link" rel="manifest" href="">
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    * {
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+    /* ホーム画面アプリ起動時のノッチ・下部バー干渉防止 */
+    body {
+      padding-top: env(safe-area-inset-top);
+      padding-bottom: calc(env(safe-area-inset-bottom) + 3rem);
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans antialiased select-none">
+
+  <!-- ヘッダー -->
+  <header class="border-b border-slate-800 bg-slate-900/95 backdrop-blur sticky top-0 z-30 px-3 py-2.5">
+    <div class="max-w-2xl mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <span class="text-lg font-black bg-gradient-to-r from-indigo-400 to-cyan-400 bg-clip-text text-transparent">LexiForge 1400</span>
+        <span id="stat-overall-badge" class="text-[11px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">習得 0%</span>
+      </div>
+      
+      <div class="flex items-center gap-2">
+        <!-- ホーム画面追加ボタン（アプリ化後は自動で非表示） -->
+        <button onclick="openInstallModal()" id="btn-install-app" class="flex items-center gap-1 text-xs font-bold px-2.5 py-1.5 rounded-lg bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 active:scale-95 transition">
+          <span>📲</span>
+          <span>アプリ化</span>
+        </button>
+
+        <!-- 音声 ON/OFF 切り替えボタン -->
+        <button onclick="toggleAudio()" id="btn-audio-toggle" class="flex items-center gap-1 text-xs font-bold px-2.5 py-1.5 rounded-lg bg-slate-800 text-slate-200 border border-slate-700 active:scale-95 transition">
+          <span id="audio-icon">🔊</span>
+          <span id="audio-text">音: ON</span>
+        </button>
+        <div class="text-xs font-bold text-amber-400 flex items-center gap-0.5">
+          🔥<span id="stat-streak">1</span>日
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ホーム画面追加ガイドモーダル -->
+  <div id="install-modal" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <h3 class="font-black text-base text-white flex items-center gap-2">📲 ホーム画面に追加する方法</h3>
+        <button onclick="closeInstallModal()" class="text-slate-400 hover:text-white text-lg font-bold px-2">✕</button>
+      </div>
+
+      <div id="native-install-Area" class="hidden">
+        <button onclick="triggerNativeInstall()" class="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-600 text-white font-black text-sm shadow-lg">
+          ✨ ワンタップでホーム画面にインストール
+        </button>
+      </div>
+
+      <div class="space-y-3 text-xs text-slate-300 leading-relaxed">
+        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-1.5">
+          <div class="font-bold text-indigo-400">🍎 iPhone / iPad (Safari) の場合</div>
+          <ol class="list-decimal list-inside space-y-1 text-slate-300">
+            <li>Safariでこのページを開きます</li>
+            <li>画面下（または右上）の<strong>共有ボタン「<span class="text-cyan-400">↑</span>（四角から矢印）」</strong>をタップ</li>
+            <li>メニューを下にスクロールして<strong>「ホーム画面に追加」</strong>をタップ</li>
+          </ol>
+        </div>
+
+        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 space-y-1.5">
+          <div class="font-bold text-emerald-400">🤖 Android (Chrome) の場合</div>
+          <ol class="list-decimal list-inside space-y-1 text-slate-300">
+            <li>Chromeでこのページを開きます</li>
+            <li>右上のメニュー<strong>「⋮」</strong>をタップ</li>
+            <li><strong>「ホーム画面に追加」</strong>または<strong>「アプリをインストール」</strong>をタップ</li>
+          </ol>
+        </div>
+
+        <div class="bg-indigo-950/40 border border-indigo-500/30 p-3 rounded-xl text-[11px] text-slate-300">
+          💡 <strong>ポイント：</strong> スマホ内の「ファイル」アプリから直接開いている場合は、SafariやChromeの「ホーム画面に追加」が出ないことがあります。PCで <strong>Netlify Drop（app.netlify.com/drop）</strong> や <strong>GitHub Pages</strong> にこの <code>index.html</code> をドラッグ＆ドロップしてURL化すると、10秒で完全なWebアプリとしてホーム画面に追加できます。
+        </div>
+      </div>
+
+      <button onclick="closeInstallModal()" class="w-full py-2.5 rounded-xl bg-slate-800 text-slate-200 font-bold text-xs">
+        閉じる
+      </button>
+    </div>
+  </div>
+
+  <main class="max-w-2xl mx-auto px-3.5 pt-3 space-y-4">
+
+    <!-- 画面切り替えタブ -->
+    <div class="grid grid-cols-3 gap-1.5 bg-slate-900 p-1 rounded-xl border border-slate-800 text-xs font-bold">
+      <button onclick="switchTab('dashboard')" id="tab-dashboard" class="py-2 rounded-lg bg-indigo-600 text-white">📊 習得状況</button>
+      <button onclick="switchTab('quiz')" id="tab-quiz" class="py-2 rounded-lg text-slate-400 hover:text-white">📝 4択テスト</button>
+      <button onclick="switchTab('manage')" id="tab-manage" class="py-2 rounded-lg text-slate-400 hover:text-white">📚 単語一覧</button>
+    </div>
+
+    <!-- 1. ホーム（100語ごとの習得率 & ワンタップ開始） -->
+    <section id="view-dashboard" class="space-y-4">
+      <!-- 範囲クイックセレクト -->
+      <div class="bg-slate-900 border border-slate-800 p-3.5 rounded-xl space-y-2.5">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-indigo-400">🎯 現在のテスト対象</span>
+          <span id="active-pool-text" class="text-xs font-bold text-emerald-400">対象: 100語</span>
+        </div>
+        <div class="grid grid-cols-2 gap-2 text-xs">
+          <select id="section-select" onchange="onSectionChange()" class="bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 font-bold">
+            <option value="1-100">Section 1 (1〜100)</option>
+            <option value="101-200">Section 2 (101〜200)</option>
+            <option value="201-300">Section 3 (201〜300)</option>
+            <option value="301-400">Section 4 (301〜400)</option>
+            <option value="401-500">Section 5 (401〜500)</option>
+            <option value="501-600">Section 6 (501〜600)</option>
+            <option value="601-700">Section 7 (601〜700)</option>
+            <option value="701-800">Section 8 (701〜800)</option>
+            <option value="801-900">Section 9 (801〜900)</option>
+            <option value="901-1000">Section 10 (901〜1000)</option>
+            <option value="1001-1100">Section 11 (1001〜1100)</option>
+            <option value="1101-1200">Section 12 (1101〜1200)</option>
+            <option value="1201-1300">Section 13 (1201〜1300)</option>
+            <option value="1301-1400">Section 14 (1301〜1400)</option>
+            <option value="all">全範囲 (1〜1400)</option>
+          </select>
+
+          <select id="pos-filter" onchange="applyCustomRange()" class="bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-200 font-bold">
+            <option value="all">すべての品詞</option>
+            <option value="動詞">動詞のみ</option>
+            <option value="名詞">名詞のみ</option>
+            <option value="形容詞">形容詞のみ</option>
+            <option value="副詞・他">副詞・その他</option>
+          </select>
+        </div>
+
+        <div class="flex gap-2 pt-1">
+          <button onclick="quickStartFromDash(20)" class="flex-1 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:scale-[0.98] font-bold text-xs text-white shadow-md transition">
+            📝 この範囲で20問テスト
+          </button>
+          <button onclick="quickStartFromDash(100)" class="flex-1 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 active:scale-[0.98] font-bold text-xs text-white shadow-md transition">
+            🔥 この範囲で100問テスト
+          </button>
+        </div>
+      </div>
+
+      <!-- 100語別 習得率カード一覧 -->
+      <div class="space-y-2.5">
+        <div class="flex items-center justify-between text-xs text-slate-400 px-1">
+          <span class="font-bold text-white">📦 100語セクション別 習得度 (全14セクション)</span>
+          <span>Lv.3以上で習得判定</span>
+        </div>
+        <div id="section-progress-list" class="space-y-2"></div>
+      </div>
+    </section>
+
+    <!-- 2. 4択クイズ画面 -->
+    <section id="view-quiz" class="hidden space-y-3.5">
+      
+      <!-- テスト操作バー -->
+      <div class="bg-slate-900 border border-slate-800 p-3 rounded-xl flex items-center justify-between gap-2 text-xs">
+        <div class="flex items-center gap-1.5">
+          <button onclick="setQuizCount(20)" id="btn-count-20" class="px-2.5 py-1 rounded font-bold bg-indigo-600 text-white">20問</button>
+          <button onclick="setQuizCount(100)" id="btn-count-100" class="px-2.5 py-1 rounded font-bold bg-slate-800 text-slate-300">100問</button>
+        </div>
+
+        <!-- 未習得のみトグル -->
+        <label class="flex items-center gap-1.5 cursor-pointer bg-slate-950 px-2 py-1 rounded border border-slate-700">
+          <input type="checkbox" id="unmastered-only-check" onchange="toggleUnmastered()" class="w-3.5 h-3.5 rounded text-indigo-600 bg-slate-900">
+          <span class="text-[11px] font-bold text-slate-300">未習得のみ</span>
+        </label>
+        
+        <div class="font-bold text-slate-300">
+          <span id="quiz-progress-text" class="text-indigo-400">1 / 20</span>
+          <span class="text-emerald-400 ml-1.5">正解: <strong id="quiz-correct-count">0</strong></span>
+        </div>
+      </div>
+
+      <!-- プログレスバー -->
+      <div class="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+        <div id="quiz-progress-bar" class="h-full bg-gradient-to-r from-indigo-500 to-emerald-400 transition-all duration-200" style="width: 0%"></div>
+      </div>
+
+      <!-- 出題カード本体 -->
+      <div id="quiz-question-box" class="bg-slate-900 border-2 border-slate-800 p-5 rounded-2xl text-center space-y-2 shadow-lg">
+        <div class="flex items-center justify-center gap-2">
+          <span id="q-number" class="text-xs font-black px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">No.1</span>
+          <span id="q-pos" class="text-xs font-bold px-2 py-0.5 rounded bg-slate-800 text-slate-400">動詞</span>
+          <button onclick="speakCurrentQuestion()" class="text-xs px-2 py-0.5 rounded bg-slate-800 text-indigo-300 hover:text-white flex items-center gap-1">
+            🔊 発音
+          </button>
+        </div>
+        <h2 id="q-word" class="text-4xl font-black text-white tracking-tight py-1">believe</h2>
+        <div id="q-feedback-text" class="text-xs font-bold h-4 text-slate-400">日本語の意味を選択してください</div>
+      </div>
+
+      <!-- 回答後の「覚え方・パーツ区切り・類義語」展開パネル -->
+      <div id="detail-explanation-card" class="hidden bg-slate-900/90 border border-indigo-500/40 p-3.5 rounded-xl space-y-2.5 text-xs transition-all">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
+          <div class="font-black text-indigo-300 flex items-center gap-1.5">
+            <span>💡 覚え方・重要語法</span>
+            <span id="exp-word-title" class="text-white"></span>
+          </div>
+          <span id="exp-correct-meaning" class="text-emerald-400 font-bold"></span>
+        </div>
+
+        <!-- 🧩 単語パーツ区切り表示エリア -->
+        <div class="bg-indigo-950/40 border border-indigo-500/40 p-2.5 rounded-lg space-y-1">
+          <div class="flex items-center justify-between">
+            <span class="text-indigo-300 font-bold text-[11px]">🧩 単語のパーツ区切り</span>
+            <span id="exp-parts-formula" class="font-mono font-bold text-cyan-300 text-xs"></span>
+          </div>
+          <div id="exp-parts-breakdown" class="text-slate-300 text-[11px] leading-relaxed"></div>
+        </div>
+
+        <div class="grid sm:grid-cols-2 gap-2">
+          <!-- コロケーション -->
+          <div class="bg-slate-950 p-2 rounded-lg border border-slate-800/80">
+            <div class="font-bold text-cyan-400 text-[11px] mb-0.5">🔗 入試頻出コロケーション</div>
+            <div id="exp-collocation" class="text-slate-300 text-[11px]"></div>
+          </div>
+          <!-- 類義語 -->
+          <div class="bg-slate-950 p-2 rounded-lg border border-slate-800/80">
+            <div class="font-bold text-amber-400 text-[11px] mb-0.5">🔄 1400語内の類義語</div>
+            <div id="exp-synonyms" class="text-slate-300 text-[11px]"></div>
+          </div>
+        </div>
+
+        <!-- 次の問題へ進むボタン -->
+        <button onclick="goToNextQuestion()" id="btn-next-step" class="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-600 to-cyan-600 active:scale-[0.98] font-bold text-sm text-white shadow-lg flex items-center justify-center gap-1.5">
+          <span>次の問題へ進む</span>
+          <span>➔</span>
+        </button>
+      </div>
+
+      <!-- 4択ボタン群 -->
+      <div id="quiz-choices-grid" class="grid gap-2.5"></div>
+
+      <!-- テスト結果画面 & 間違えた問題だけ解き直すリベンジボタン -->
+      <div id="quiz-result-card" class="hidden bg-slate-900 border border-slate-800 p-4 rounded-2xl space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+          <div>
+            <h3 class="font-black text-lg text-white">🎉 テスト完了！</h3>
+            <p id="res-score-detail" class="text-xs text-slate-400 mt-0.5">20問中 18問正解</p>
+          </div>
+          <span id="res-score-rate" class="text-3xl font-black text-emerald-400">90%</span>
+        </div>
+
+        <!-- 間違えた問題解き直しバナー -->
+        <div id="retry-action-box" class="bg-rose-950/40 border border-rose-500/40 p-3.5 rounded-xl space-y-2.5">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold text-rose-300">🔥 間違えた問題が <span id="retry-count-badge" class="text-rose-400 font-black text-sm">0</span> 語あります</span>
+            <span class="text-[11px] text-slate-400">全問正解までループ可能</span>
+          </div>
+          <button onclick="startRevengeOnly()" class="w-full py-3 rounded-xl bg-gradient-to-r from-rose-600 to-orange-600 hover:from-rose-500 hover:to-orange-500 active:scale-[0.98] font-black text-sm text-white shadow-lg transition">
+            🔥 間違えた問題だけ今すぐ解き直す
+          </button>
+        </div>
+
+        <!-- もう一度・別テストボタン -->
+        <div class="flex gap-2">
+          <button onclick="startQuizSession(currentQuizTargetCount)" class="flex-1 py-2.5 rounded-xl bg-indigo-600 active:scale-95 font-bold text-xs text-white">
+            🔄 同じ範囲でもう一度
+          </button>
+          <button onclick="switchTab('dashboard')" class="flex-1 py-2.5 rounded-xl bg-slate-800 active:scale-95 font-bold text-xs text-slate-300">
+            📊 習得一覧に戻る
+          </button>
+        </div>
+
+        <!-- 間違えた単語の詳細復習アコーディオンリスト -->
+        <div class="space-y-2">
+          <div class="text-xs font-bold text-slate-300 flex items-center justify-between">
+            <span>📝 間違えた単語の解説一覧 (タップでパーツ区切り・語源確認)</span>
+            <span class="text-[10px] text-slate-500">自動で弱点保存済</span>
+          </div>
+          <div id="wrong-accordion-list" class="space-y-1.5 max-h-72 overflow-y-auto pr-1"></div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- 3. 単語一覧画面 -->
+    <section id="view-manage" class="hidden space-y-3">
+      <div class="bg-slate-900 border border-slate-800 p-3 rounded-xl flex items-center justify-between gap-2">
+        <input id="search-box" type="text" oninput="renderManageList()" placeholder="単語・意味・番号で検索..." class="bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white w-full">
+        <span id="manage-count-badge" class="text-xs text-slate-400 font-bold shrink-0">1400語</span>
+      </div>
+      <div id="word-list-table" class="space-y-1.5 max-h-[560px] overflow-y-auto pr-1"></div>
+    </section>
+
+  </main>
+
+  <script>
+    // --- PWA アプリアイコン & Manifest 動的生成 ---
+    let deferredInstallPrompt = null;
+
+    function setupPWA() {
+      // スタンドアロン（ホーム画面から起動中）なら「📲アプリ化」ボタンを隠す
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+      if (isStandalone) {
+        document.getElementById('btn-install-app').classList.add('hidden');
+      }
+
+      // Canvasで512x512のアプリアイコン(PNG)を自動生成
+      const canvas = document.createElement('canvas');
+      canvas.width = 512;
+      canvas.height = 512;
+      const ctx = canvas.getContext('2d');
+
+      // 背景グラデーション
+      const grad = ctx.createLinearGradient(0, 0, 512, 512);
+      grad.addColorStop(0, '#312e81');
+      grad.addColorStop(0.5, '#1e1b4b');
+      grad.addColorStop(1, '#0f172a');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 512, 512);
+
+      // 枠線アクセント
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 16;
+      ctx.strokeRect(24, 24, 464, 464);
+
+      // アイコン文字 "LF" & "1400"
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '900 170px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText('LF', 256, 200);
+
+      ctx.fillStyle = '#38bdf8';
+      ctx.font = 'bold 95px sans-serif';
+      ctx.fillText('1400', 256, 360);
+
+      const iconDataUrl = canvas.toDataURL('image/png');
+      document.getElementById('apple-touch-icon-link').href = iconDataUrl;
+
+      // Web App Manifest を生成してセット
+      const manifest = {
+        name: "LexiForge 1400 - 英単語4択特訓",
+        short_name: "LexiForge",
+        start_url: "./",
+        display: "standalone",
+        background_color: "#020617",
+        theme_color: "#0f172a",
+        orientation: "portrait",
+        icons: [
+          { src: iconDataUrl, sizes: "192x192", type: "image/png" },
+          { src: iconDataUrl, sizes: "512x512", type: "image/png" }
+        ]
+      };
+      const manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
+      document.getElementById('manifest-link').href = URL.createObjectURL(manifestBlob);
+    }
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredInstallPrompt = e;
+      document.getElementById('native-install-Area').classList.remove('hidden');
+    });
+
+    function openInstallModal() {
+      document.getElementById('install-modal').classList.remove('hidden');
+    }
+    function closeInstallModal() {
+      document.getElementById('install-modal').classList.add('hidden');
+    }
+    async function triggerNativeInstall() {
+      if (!deferredInstallPrompt) return;
+      deferredInstallPrompt.prompt();
+      await deferredInstallPrompt.userChoice;
+      deferredInstallPrompt = null;
+      closeInstallModal();
+    }
+
+    // --- 全1,400語 完全内蔵データ ---
+    const RAW_1400_FULL = 
+      "1believeを信じる2considerを見なす3expectを予期する、と思う4decide決める5allowを許す6remember覚えている7worry心配する8concernに関係する、を心配させる9suggestを提案する10explain説明する11describeの特徴を述べる12improveを改善する13produceを生産する14createを創造する15provideを供給する16increase増える17grow成長する18developを開発する19rise上がる、昇る20raiseを上げる、（子供）を育てる21follow次に続く、に従う22requireを要求する23fillを満たす24supportを支持する25shareを共同で使う26faceに直面する、（危険などが）の身に迫る27touchを感動させる28storeを蓄える29pay（金）を支払う30dealに対処する，を扱う31save（時間、金銭など）を節約する32happen（事が）起こる、たまたまする33occur（事が）起こる34work機能する35changeを変える36runを経営する37turnの向きを変える38return戻る、帰る39standを我慢する40lie横たわる、うそをつく41brain脳42mind心、精神43language言語44thought考え45knowledge知識46skill技能、技術47technology科学技術48culture文化49experience経験50result結果51reason理由52cause原因53effect影響、効果54matter問題55sense感覚56way方法、道57term期間、（専門）用語58situation状況59condition状態、状況60position（所定の）位置、場所、立場61environment環境62nature自然63research研究、調査64rule規則65interest興味66value価値67view意見68sound音69form形状、（記入）用紙70case場合71role役割72age年齢73care世話74risk危険（性）75human人間の76free自由な77sure確信して78certain確信して、ある程度の79main主要な80major主要な81minor重要でない82clear明らかな83likelyありそうな84possibleあり得る、可能な85similar似ている86close（ごく）近い87common共通の88general一般的な89ordinary普通の90specific明確な91particular特別の92individual個人の93unique特有の94rare珍しい、まれな95thereforeしたがって、その結果96thusしたがって97moreoverそのうえ、さらに98furthermoreそのうえ99besidesそのうえ100nonethelessそれにもかかわらず" +
+      "101notice気づく102note注意する、注目する103discoverを発見する104realize（はっきりと）理解する105recognizeをそれとわかる106encourageを励ます107force（人）に無理やりさせる108orderを注文する109affectに影響する110offer（人）に（物・事）を提供する111demandを要求する112argueと主張する113claimを主張する114object反対する115challengeに異議を唱える116involveを巻き込む117includeを含む118containを含む119relateを関連づける120connectをつなぐ121refer言及する122contactと連絡する123compareを比べる124measureを測る125mark（印など）をつける126approach近づく127reachに到着する128achieveを達成する129receiveを受け取る130completeを完成させる131leadを導く132win勝つ133loseを失う134failできない135missに乗り遅れる136lackに欠けている、が不足している137reduceを減らす138avoidを避ける139limitを制限する140preventを妨げる141wearを身に着けている142bearを我慢する、を（心に）抱く143focusを集中させる144author著者145professor教授146sentence文、（宣告された）刑147passage（文章の）一節148message伝言、メッセージ149statement陳述150topic論題、話題151article記事152issue問題153theory理論154evidence証拠155experiment実験156subject（研究、話などの）主題157government政府158policy政策、方針159education教育160company会社161colleague同僚162industry産業163trade貿易164economy（国家などの）経済165customer顧客166benefit（物質的、精神的）利益167figure図168rate比率169chance見込み170opportunity機会171project事業172practice練習173effort努力174quality質175quantity量176amount金額177scientific科学の178political政治の179social社会の180official公式の181financial財政（上）の182expensive高価な183variousさまざまな184normal普通の185familiarよく知っている186appropriate適切な187necessary必要な188correct正しい189available利用できる、入手できる190typical典型的な191positive積極的な192negative好ましくない、消極的な193passive受動的な194physical身体の195mental精神の196ratherむしろ、かなり197insteadその代わりに198otherwiseそうでなければ、それ以外は199somehowどうにかして200somewhatいくぶん" +
+      "201wonderと思う202suppose（たぶん）と思う、もしならば203imagineを想像する204regardを見なす205wishと思う206determineを決定する207expressを表現する208representを象徴する、を代表する209identifyを特定する210mentionに言及する211solveを解決する212proveを証明する213communicate意思を通じ合う214respectを尊敬する215preferのほうを好む216designを設計する217establishを設立する218foundを設立する219publishを出版する220serve役に立つ221supplyを供給する222apply申し込む、を適用する223treatを扱う、を治療する224search（場所など）を探す、捜索する225prepare準備する226protectを保護する227pickを選び取る、を摘む228fitピッタリ合う、うまく合う229gainを（努力して）手に入れる230enterに入る231spread広がる232advance前進する233tend傾向がある234depend依存する235exist存在する236decline減る、衰える237decrease減る238wasteを浪費する239damage（物、体の一部）に損害を与える240suffer苦しむ241act行動する242performを行う243species（生物の）種244variety多様（性）245degree程度246range範囲247standard水準、基準248medium（伝達などの）媒体249advantage有利な点250task（課された）任務、仕事251rest残り、息252purpose目的253feature特徴254factor要因、要素255shape形、体調256imageイメージ、印象257detail詳細（な情報）258character性格259function機能260structure構造261ground地上262influence影響263disease病気264pain痛み、骨折り、苦労265medicine薬266death死267fear恐怖（心）268memory記憶（力）269emotion（喜怒哀楽の）感情270movement（政治的な）運動271region（広大な）地域272climate（長期的な）気候273temperature体温274community地域社会275population人口276generation世代277present出席している、現在の278recent最近の279current現在の280ancient古代の281previous前の282serious真剣な283careful注意深い284responsible責任がある285active活動的な286afraid恐れて287aware気づいて288patient我慢強い289whole全体の290low低い291huge巨大な292blank空白の293central中心的な294safe安全な295wild野生の296eventually結局（は）297unfortunately残念なことに298seemingly見たところ299afterward後で300altogether完全に" +
+      "301assume当然と思う302guessと思う303associateから連想する304desireを強く望む305indicateを示す306respond応答する307reply返事を出す308attemptを試みる309manageをなんとかやり遂げる、をうまく扱う310maintainを維持する、を主張する311unite結合する312join（会、団体、人）に加わる313attractを引きつける314match調和する315attackを襲う、攻撃する316seekを探し求める317engage従事する、を引き入れる318succeed成功する、継承する319marryと結婚する320attendに出席する321satisfyを満足させる322survive（切り抜けて）生き残る323promoteを促進する324earnを稼ぐ325feedに食べ物を与える326taste～の味がする327smell～のにおいがする328adapt（…に）順応する(to)329adopt（考え、方針）を採用する330adjustを調節する331separateを分離する332exchange交換する333replaceを取り替える334removeを取り去る335release（ガスなど）を放出する336disappear姿を消す337observeを観察する338estimateと推定する339revealを明らかにする、暴露する340emerge現れる341arise（問題、困難、機会などが）生じる342citizen国民343career経歴344income（定期）収入345billion10億346bill請求書、勘定（書）347charge（サービスに対する）料金348item品目、項目349scale規模350site場所、用地351section部分352crop（農）作物353diet（日常の）食事354source源355resource資源356moment瞬間357decade10年間358stage（発達、変化の）段階359aspect（物事の）側面360sort種類361instance（具体）例362link関連、つながり363contrast対照364access利用、入手365device装置366survey（アンケートによる意識などの）調査367technique技術368content中身369surface表面370concept概念371difficulty困難、苦労372trouble困難373crime犯罪374attitude態度375habit（個人的な）習慣376whateverたとえ何を…しても、たとえ何が…であろうと377urban都市の378rural田園の、田舎の379localその土地の、地元の380native生まれた土地の381smart頭の良い382intelligent知能の高い、聡明な383intellectual知的な384potential潜在的な385moral道徳（上）の386private個人的な387equal等しい、平等な388fair公正な、(数量などが)かなりの389entire全体の390initial初期の391essential必要不可欠な392significant重要な393terribleひどい394digitalデジタル(方式)の395direct直接の396nearlyもう少しで397merely単に398seldomめったに…ない399lately最近400apart（空間、時間的に）離れて" +
+      "401trustを信頼する402promiseを約束する403predictを予測する404reflectを反映する、を反射する405recallを思い出す406rely頼る407commit（罪、過失など）を犯す、（金、人、時間など）を投入する408appreciateをありがたく思う、を正しく認証（評価）する409praiseを褒める410doubtを疑わしいと思う、ではないと思う411complain不平を言う412ignoreを無視する413warnに警告する414gatherを集める、拾い集める415acquire（習慣など）を身に付ける416examineを調べる417score（試合、テストで）（点）をとる418judgeを判断する419selectを選び出す420divideを分ける421distinguishを区別する422graduate卒業する423shift（位置、方針など）を変える424hideを隠す425mixを混ぜる426fixを修理する427displayを示す428defineを定義する429inventを発明する430vary異なる、多様である431expandを拡大する432evolve進化する、発展する433confuseを混同する434consumeを消費する435compete競う436repeatを繰り返す437repairを修理する438remindに思い出させる439refuseを拒む440rejectを拒絶する441denyを否定する442destroyを破壊する443audience観衆、聴衆444race民族、人種445conflict争い446debate論争447struggle懸命の努力、奮闘448strategy戦略449progress進歩450principle原則、原理451element要素452origin起源453birth出産454ancestor祖先455cell細胞456gene遺伝子457scene場面458trend傾向459traffic交通（量）460track（車などが通った）跡461series連続462context状況463background（景色、事件などの）背景464basis基準465status地位、身分466volunteerボランティア467staffスタッフ、職員468duty義務469labor労働470reward褒美471aim目的472fun楽しみ、おもしろいこと（人）473crowd群衆474revolution革命475poverty貧困476consequence結果477sequence連続、（連続するものの）順番478complex複雑な479complicated複雑な480false誤った481alternative代替の482extreme極端な483ideal理想的な484primary最も重要な485worth価値のある486obvious明らかな487legal法律（上）の488commercial商業的な、営利的な489artificial人工の490chemical化学の491biological生物（学）の492former元の493mobile（物が）可動［移動］式の494straightまっすぐな495regular定期的な496independent（人が）自立した497overseas海外へ498unlike～と違って499via～媒介で500whereas…だけれども" +
+      "501perceiveを知覚する502fascinateを魅了する503boreを退屈させる504disappointを失望させる505implyそれとなく言う506recommendを勧める507demonstrateを証明する508concludeと結論づける509announceを発表する510appeal心に訴える511address（問題）に取り組む、（人）に演説する512advertiseを宣伝する513inviteを招待する514affordを持つ余裕がある515purchaseを購入する516participate参加する517belong所属している、ものである518conductを行う519behave振る舞う520operateを操作する、手術を行う521organizeを主催する、準備する522hostを主催する523combineを組み合わせる524deliver配達する525locateを（場所に）置く526encounterに（偶然）出会う527surroundを囲む528exploreを探検する529stickくっつく、固執する、を貼り付ける530strikeに当たる、（人）に印象を与える531hurtを痛める532biteにかみつく533tearを引き裂く534aidを援助する535pressを押す536burnを燃やす537flow流れる538preserveを保存する539borrowを（無料で）借りる540stealを盗む541escape逃れる、脱出する、を免れる542neighbor隣人、近所の人543household世帯544resident居住者、住人545vehicle車、乗り物546wheel（自動車の）ハンドル547delay遅れ548fuel燃料549pollution汚染550atmosphere雰囲気551electricity電気552cancer癌553plague疫病554threat恐れ、予兆555flood洪水556earthquake地震557disaster災害558crisis危機559victim被害者、犠牲者560wealth富、財産561fund資金、基金562capital資本563profit収益564talent才能565capacity能力566scholar（主に人文系の）学者567tradition伝統568literature文学569lecture講義、講演570manner方法、行儀、作法571symbol象徴572analysis分析573version…版574perspective観点575vision（将来の）展望576sight見えること577insight洞察（力）578bilingualバイリンガルの，2言語を話す579capable能力がある580willingをいとわない581eager熱望して582amazing驚くほどの583calm冷静な584quiet静かな585senior高齢者の、（地位などが）上級の586elderly年配の587firm確固とした588severe（痛みなどが）ひどい、厳しい589tough困難な590rapid急速な591immediate即座の592vast広大な593enormous巨大な、莫大な594broad広範囲な595narrow（幅が）狭い596tinyとても小さな597efficient効率の良い598constant絶え間ない599nearbyすぐ近くの600distant遠い" +
+      "601insist断固要求する602intendを意図する、つもりでいる603inspireを奮起させる604emphasizeを強調する、力説する605proposeを提案する606persuadeを説得する607convinceに納得させる608admitを（事実と）認める609favorに賛成する、を好む610excuseを大目に見る、の言い訳をする611interpretを解釈する612translateを翻訳する613concentrate精神を集中する614criticizeを非難する615blameを（～のことで）責める(for)、を（～の）せいにする(on)616opposeに反対する617informに知らせる618grant（人）に（物）を（求めに応じて）与える619obtainを得る620transformを変える621alterを変える622arrangeを（きちんと）並べる、手はずを整える623interact相互に作用する624handle（問題など）を処理する625extendを延長する626settle定住する、を決める627contribute貢献する、を寄付する628constructを建設する629consist成る、（本質が）ある630suitに（色、服などが）似合う、に都合がよい631tieを結びつける632differ異なる633hateをひどく嫌う、憎む634dislikeを嫌う635disagree意見が合わない636regretを後悔する、を残念に思う637employを雇用する、を（手段などに）用いる638hireを雇う639absorb（人）を夢中にさせる640exposeをさらす641breathe呼吸する642root起源、ルーツ643immigration（外国からの）移住644tribe部族645landscape風景646agriculture農業647soil土壌、土648mine鉱山649mass大衆650quarter四分の一651era時代652circumstance状況、事情653phenomenon現象654custom（社会の）慣習655religion宗教656civilization文明657universe宇宙658diversity多様性659trait（人の性格などの）特性，特徴660review批評、再検討661occasion場合、時662campaign（政治的、社会的）運動、活動663board委員会、重役会664facility施設665court法廷、裁判所666trial裁判667laboratory研究所、実験室668instrument道具、機器669instruction指示670document書類671target目標672outcome結果673muscle筋肉674wage賃金675gender（男女の）性676confidence自信677credit信用678conscious意識して、自覚して679anxious心配して、切望して680asleep眠って681alive生きている682alike似ている683excellent秀でている684odd奇妙な685sensitive敏感な686sensible賢明な687violent暴力的な688military軍（隊）の、軍事の689nuclear原子力の、核の690contemporary現代の691elementary初等（教育）の692annual年１回の693chief第一の、主要な694actual実際の695virtual仮想の696numerous多数の697multiple多くの(部分から成る)698widespread広範囲にわたる699sufficient十分な700empty空の" +
+      "701confirmを裏付ける、(本当だと)確認する702illustrateを説明する、を例証する703spell（語）をつづる704botherを困らせる705annoyをいらいらさせる、悩ます706disturbを邪魔する707discourageを思いとどまらせる、を落胆させる708embarrassを当惑させる、に恥ずかしい思いをさせる709frightenを怖がらせる710puzzleを当惑させる711upsetを動揺させる712stimulateを刺激する713beatを打ち負かす、（続けざまに）打つ714blow（風が）吹く715injureを傷つける716cureを治す717recover回復する718overcomeを克服する719quitをやめる720transferを移す721transportを輸送する722exportを輸出する723importを輸入する724invest投資する725investigateを調査する726manufactureを(大量に)製造する727react反応する728award（人）に（賞など）を授与する729banを（公式に）禁止する730prohibitを禁止する731forbidを禁じる732abandonを捨てる733freeze凍る734liftを持ち上げる735hangを掛ける736shakeを振る737stretchを（引っ張って）伸ばす、広げる738layを置く、敷く739stareじっと見つめる740gaze見つめる741captureを捕らえる742breedを繁殖させる、飼育する、（動物が）子を産む743mammal哺乳類、哺乳動物744ape類人猿745insect昆虫746infant乳児747organ臓器748web（ワールドワイド）ウェブ749fossil化石750battle戦闘751enemy敵752weapon兵器、武器753arm腕、武器、兵器754army陸軍755navy海軍756border境界線、国境757barrier障壁758philosophy哲学759psychology心理学760alarm警報（機）；目覚まし時計761harm害762depressionうつ病、不景気763disadvantage不利（な点）764shortage不足765stock在庫品766loanローン、貸付金767budget予算（案）768innovation革新769union組合770unit（最小）単位771material材料、原料772substance物質773stuff持ち物、材料774proportion割合775edgeへり776code規範；暗号777mysteryなぞ778curious好奇心の強い779strict厳しい780frank率直な781polite丁寧な782aggressive攻撃的な783accurate正確な784exact正確な785proper適切な786brief短時間の787extraordinary並外れた788flexible柔軟な789pleasant快い、楽しい790comfortable心地よい、快適な791stable安定した792thick分厚い793thinやせた794abstract抽象的な795concrete具体的な796absolute絶対的な797prime最も重要な，第一の798vital極めて重要な799contrary相反する800regardless気にかけない" +
+      "801permit許可する802suspectではないかと思う803pursueを追求する、（仕事など）に従事する804pretendふりをする805calculateを計算する806guaranteeを保証する、確約する807acknowledgeを認める808impressを感動させる809urgeを熱心に勧める810conveyを伝達する811celebrate（行事など）を祝う812admire感嘆する813devote（時間など）を充てる814dominateを支配する、統治する815eliminateを取り除く816restrictを制限する817isolateを切り離す818endangerを（滅亡の）危険にさらす819secureを確保する820reserveを予約する821possess（性質・能力など）を持っている822launchを始める823detectを見つける、検出する824reverseを逆転させる、転換する825convertを変える826hurry急ぐ827rush急いで行く828roll転がる829crash（大きな音を立てて）衝突する830buryを埋める831digを掘る832attachを付ける、愛着を抱いている833melt（熱で）溶ける834accompanyと一緒に行く835assist（人）を手伝う836cope（うまく）対処する837lend（人）に（物）を貸す838rentを賃借りする839owe（人）に（金など）を借りている、おかげである840apologize謝る841forgive（人の罪など）を許す842tongue言語843dialect方言844accentなまり、方言845colony植民（地）846grain穀物847harvest収穫848ingredient（料理の）材料849portion部分、（食べ物の）一人前850hunger飢え851obesity肥満852burden（精神的）負担、重荷853emergency緊急（事態）854debt借金855contract契約856client得意客857therapy（心理）療法858physician内科医、医師859democracy民主主義860election選挙861vote投票862candidate候補者863minister大臣864conference会議865ceremony式典、儀式866institution機関、制度867corporation（大）企業868cooperation協力、共同869authority当局870theme主題、テーマ871notion考え872hypothesis仮説873discipline規律、しつけ874route道（筋）875routine日課、決まりきった仕事876destination目的地877domestic国内の878ethnic民族の、人種の879alien異質の880visible目に見える881verbal言葉による882fundamental基本の883conventional従来の、ありきたりの884relevant関係のある885rational合理的な886precise正確な887principal主要な888crucial重大な889permanent永続的な890intense激しい、強烈な891equivalent相当する892frequent頻繁な893sudden急な894temporary臨時の、一時的な895internal内部の896external外部の897distinctまったく異なる898extinct絶滅した899exhausted疲れ果てた900evil邪悪な" +
+      "901greet（人）にあいさつする902chatおしゃべりをする903remarkと述べる、言う904commandを命ずる905utter（言葉など）を発する906declareを宣言する907pronounceを発音する908correspond一致する、（手紙などで）連絡を取り合う909imitateをまねる910resembleに似ている911exhibitを（展覧会などに）展示する、（感情、兆候など）を示す912distributeを分配する913attribute（結果）を（～の）せい[おかげ]と考える(on)914evaluateを評価する915assessを評価する916deserveに値する917weighの重さがある、の重さを量る918strengthenを強くする919weakenを弱める920approve賛成する921assign（仕事など）を割り当てる922sustainを持続させる923accomplishを成し遂げる924relieve（苦痛など）を和らげる、（不安など）を減らす925frustrateに不満を抱かせる926scareを怖がらせる927resistを我慢する928protest抗議する929shutを閉める930defeat（対戦相手）を負かす931neglectを怠る932retire引退する933reformを改革する、改善する934collapse崩壊する、倒れる935ruinを台無しにする936sink沈む937pileを積み重ねる938deriveを得る、引き出す、由来する939yieldを産出する、（利益など）を生む、屈する940occupyを占める、を占領する941wrapを包む942embraceを抱きしめる、（申し出など）を受け入れる943length（物や時間の）長さ944height高度945volume（総）量、体積、容積946sum金額947frame額縁948boundary境界（線）949district（行政などの）地区950territory領土951square正方形952empire帝国953heritage（文化、自然）遺産954fee料金955discount割引956charity慈善事業957mission使命、任務958profession（専門的な）職業959slave奴隷960witness目撃者961incident出来事962insurance保険963welfare福祉964treasure宝物965leisure余暇966priority優先事項967reputation評判968honor光栄969statue像、彫像970architecture建築（学）971logic論理972mechanism仕組み973clue手がかり974means手段975trapわな976trick策略、いたずら977guard警戒；護衛者978innocent無罪の979guilty罪悪感のある、有罪の980rude無礼な981shy内気な、恥ずかしがりの982liberal寛大な983stupid愚かな984reluctant気が進まない985generous気前のよい986modest控えめな987lonely（孤独で）寂しい988pure純粋な989grand豪華な、雄大な990adequate十分な991apparent（見て）明らかな、見たところ〜らしい992classic（芸術などが）最高水準の、典型的な993remote遠く離れた994solid固体の、しっかりした995raw生の996plain平易な997primitive原始の998steady着実な999slightわずかな1000subtle微妙な" +
+      "1001delight大喜びさせる1002entertain楽しませる1003fulfill満たす1004cheer元気づける1005amuse笑わせる1006anticipate予期する1007confront立ちはだかる1008undergo経験する1009exceed超える1010overwhelmまいらせる1011shoot撃つ1012murder殺害する1013rob奪う1014deprive奪う1015ridを取り除く1016interruptさえぎる1017interfere邪魔する1018bullyいじめる1019defend守る1020rescueを救う1021accuse非難する1022sue訴える1023wanderぶらつく，歩き回る1024chase追いかける1025arrest逮捕する1026submit提出する1027punish罰する1028resolve解決する1029justify正当化する1030restore修復する1031modify修正する1032impose押しつける1033compose構成する1034classify分類する1035substitute代わりに使う1036shrink縮む1037lean寄りかかる1038fold折り畳む1039load積む1040pour注ぐ1041float浮かぶ1042shine輝く1043editor編集者1044poetry詩1045usage使い方1046sector部門、分野1047span期間1048literacy読み書きの能力1049symptom症状1050phase段階1051surgery手術1052virusウイルス1053poison毒1054proteinタンパク質1055liquid液体1056oxygen酸素1057globe世界1058pole極(地)1059valley谷1060conservation(環境)保護1061channel伝達経路1062glacier氷河1063pioneer先駆者1064prospect見込み1065enthusiasm熱狂，熱中1066passion情熱1067fortune財産1068obstacle障害（物）1069prejudice偏見1070justice正義1071opponent相手、敵1072sacrifice犠牲1073fault責任1074prison刑務所1075shelter避難（所）1076committee委員会1077ritual儀式1078mature大人になった1079moderate適度な1080neutral中立の1081optimistic楽観的な1082pessimistic悲観的な1083radical根本的な1084rough粗い1085smooth滑らかな1086fluent流ちょうな1087casual形式ばらない1088instant即時の1089incredible信じられない1090genuine本物の1091precious貴重な1092prominent重要な1093blind目の見えない1094deaf耳が聞こえない1095harsh厳しい1096prompt迅速な1097inevitable避けられない1098marine海の1099tropical熱帯（地方）の1100Arctic北極の" +
+      "1101forecast予報1102speculate思索する1103betきっと～だと思う1104quote引用する1105consult意見を求める1106disputeに異議を唱える1107accumulate集める、蓄積する1108graspぎゅっとつかむ、理解する1109gripをしっかり握る1110seizeつかむ1111comprehend理解する1112constitute構成する1113reinforce強化する1114resort訴える1115donate寄付する1116obey従う1117dedicateささげる1118transmit伝える1119equip装備する1120bind縛る1121pose投げかける1122pause休止する1123hesitateためらう、躊躇する1124split分割する1125bend曲げる1126tap軽くたたく1127boil沸かす1128bowおじぎする1129conceal隠す1130disposeを処分する1131cheatだます1132distract（注意など）をそらす1133exclude締め出す1134astonish驚かせる1135thrillわくわくさせる1136leap跳ぶ1137postpone延期する1138dismiss解雇する1139resign辞める1140withdraw退く1141fade消えていく1142vanish消え失せる1143continent大陸1144geography地理、地理学1145ecology生態系1146inhabitant住民1147suburb郊外1148furniture家具1149refrigerator冷蔵庫1150garbage(生）ごみ1151trashごみ1152litter(公共の場での)ごみ1153trace名残；（通った）跡1154row列1155core核心、中心1156orbit軌道1157galaxy銀河1158myth神話1159faith信頼1160wisdom知恵1161obligation義務1162privilege特典、特権1163discrimination差別1164ambition願望1165illusion錯覚1166instinct本能1167shame残念なこと1168humorユーモア1169courage勇気1170sympathy同情、共感1171tragedy悲惨な出来事1172fate運命1173destiny運命1174abuse乱用する1175wound傷1176fever熱1177infection伝染病1178brave勇敢な1179brilliantすばらしい1180gentle優しい1181noble高貴な1182royal王室の1183sacred神聖な1184holy神聖な1185decentきちんとした1186grateful感謝している1187fond好む1188selfish自分勝手な1189awkward厄介な，ぎこちない1190awfulひどい1191ultimate最終的な1192dynamic活動的な1193tremendousとてつもない1194abundant豊富な1195dull退屈な1196urgent緊急の1197spare余分の1198tightきつい1199shallow浅い1200superficial浅はかな" +
+      "1201whisperささやく1202yell叫ぶ1203scream叫び声をあげる1204nodうなずく1205swallow飲み込む1206yawnあくびをする1207cough咳をする1208hug抱きしめる1209sweep掃く1210polish磨く1211decorate装飾する1212shed（涙）を流す1213drag引きずる1214spoil台無しにする1215burst破裂する1216explode爆発する1217compromise妥協する1218exaggerate誇張する1219exploit搾取する1220utilize利用する1221irritateいらいらさせる1222insult侮辱する1223deceiveだます1224violate違反する1225disgust嫌悪感を持たせる1226endure我慢する1227tolerate耐える1228suspend一時停止する1229ceaseやめる1230appoint任命する1231undertake引き受ける1232overtake追いつく1233proceed移る1234commute通勤[通学]する1235flourish繁盛する；繁殖する1236thrive栄える1237venture思い切って行く1238accustom慣れさせる1239rear育てる1240inherit相続する1241blossom開花する1242esteem尊敬する1243merchant商人1244fare運賃1245voyage航海1246crew乗組員1247luggage手荷物1248horizon水平線、地平線1249lightning稲妻1250dawn夜明け1251astronomy天文学1252statistics統計1253dimension局面1254faculty才能1255scheme計画1256viewpoint見地1257output生産高1258outlook見通し1259tuition授業料1260proverbことわざ1261biography伝記1262narrative話1263chapter章1264stringひも、糸1265tag札1266peasant小作農1267livestock家畜1268famine飢饉1269fatigue疲労1270motive動機1271sweat汗1272peer同僚1273glanceちらりと見る1274glimpseちらりと見えること1275luxuryぜいたく（品）1276prosperity繁栄1277fame名声1278keen熱中して1279inclined（…し）たいと思う(to do)1280competent有能な1281superior優れている1282inferior劣った1283cruel残酷な1284indifferent無関心な1285ashamed恥じて1286bold大胆な1287ridiculousばかげた1288ugly醜い1289pale青白い1290male男の1291manual手による1292mutual相互の1293delicate取り扱いの難しい1294deliberate故意の1295gradual徐々の1296loose緩い1297bitter苦い、つらい1298mild温暖な1299dense密集した1300tense張り詰めた" +
+      "1301conceiveを抱く、思いつく1302confessを告白する1303conform従う1304offendを怒らせる1305envyをうらやむ1306boast自慢する1307dareあえてする、する勇気がある1308confineを限定する1309contradictと矛盾する1310compensateに補償する1311coincide同時に起こる1312assureに安心させる1313attainを達成する1314inquireを尋ねる1315invadeを侵略する、に侵攻する1316conquerを征服する1317persist固執する、しつこく続ける1318last続く1319surrenderを引き渡す1320betrayを裏切る、を漏らす1321strainをぴんと張る、を痛める1322refrain控える1323scatterをまき散らす1324spillをこぼす1325prevail普及する、勝る1326starve飢えに苦しむ、渇望する1327digestを消化する1328disguiseを変装させる1329stripから剥奪する、取り去る1330scratchをかく1331batheを入浴させる1332soakを浸す1333stirをかき回す、呼び起こす1334wind曲がりくねる1335healを治す、癒す1336knitを編む1337sewを縫いつける1338dyeを染める1339begを懇願する、請う1340pray祈る1341congratulateに祝いの言葉を述べる1342summit頂上1343mayor市長1344secretary秘書1345council議会1346panel委員会1347jury陪審1348quarrel口論1349divorce離婚1350thief泥棒1351refuge避難1352mercy情け、慈悲1353caution用心、注意1354pity残念なこと1355sorrow悲しみ1356grief深い悲しみ1357despair絶望1358suicide自殺1359ambulance救急車1360funeral葬式1361grave墓1362virtue美徳1363legend伝説1364prestige威信、名声1365glory栄光1366dignity尊厳1367worship崇拝1368criterion基準1369consent承諾、同意1370triumph勝利1371circulation血行、発行部数1372merit優秀さ、長所1373appetite食欲、欲求1374nutrition栄養摂取1375decay虫歯、衰退、荒廃1376atom原子1377boom好況、ブーム1378valid正当な証拠のある、有効な1379due予定で、締め切りの1380vacant空いている1381bare裸の1382naked裸の1383obscureわかりにくい1384peculiar特有の1385tidy整然とした、きれいにしてある1386minute微小な1387vague漠然とした1388steep急な1389humid湿気のある1390earnest真剣な、本気の1391absurdばかげた1392hostile反感を持った、敵意のある1393idle使われていない、仕事がない1394jealous嫉妬深い1395loyal忠実な1396supreme最高の、最大の1397infinite無限の1398static変化のない1399thorough徹底的な1400immense計り知れない";
+
+    // --- 複合語・固有パーツ辞書 ---
+    const COMPOUND_PARTS_DICT = {
+      therefore: { formula: "there ＋ fore", lines: ["• <strong>there</strong>（それ・そのこと）", "• <strong>fore</strong>（前・ために / forと同源）", "➔ その結果・したがって"] },
+      furthermore: { formula: "further ＋ more", lines: ["• <strong>further</strong>（さらに遠くへ）", "• <strong>more</strong>（もっと）", "➔ さらにその上"] },
+      moreover: { formula: "more ＋ over", lines: ["• <strong>more</strong>（もっと）", "• <strong>over</strong>（上に・越えて）", "➔ その上に・さらに"] },
+      besides: { formula: "be- ＋ side ＋ -s", lines: ["• <strong>be-</strong>（〜のそばに）", "• <strong>side</strong>（横・脇）", "• <strong>-s</strong>（副詞語尾）", "➔ 脇に付け加えて・その上"] },
+      nonetheless: { formula: "none ＋ the ＋ less", lines: ["• <strong>none</strong>（少しも〜ない）", "• <strong>less</strong>（より少ない）", "➔ 少しも減らない・それにもかかわらず"] },
+      altogether: { formula: "al(all) ＋ to ＋ gether", lines: ["• <strong>al(all)</strong>（すべて）", "• <strong>to</strong>（〜へ）", "• <strong>gether</strong>（集まる / gather）", "➔ 全部まとめて・完全に"] },
+      meanwhile: { formula: "mean ＋ while", lines: ["• <strong>mean</strong>（中間の）", "• <strong>while</strong>（時間）", "➔ その合間に・その間に"] },
+      background: { formula: "back ＋ ground", lines: ["• <strong>back</strong>（後ろの）", "• <strong>ground</strong>（地面・土台）", "➔ 背景・生い立ち"] },
+      knowledge: { formula: "know ＋ -ledge", lines: ["• <strong>know</strong>（知る）", "• <strong>-ledge</strong>（状態・行為を表す名詞語尾）", "➔ 知っていること・知識"] },
+      viewpoint: { formula: "view ＋ point", lines: ["• <strong>view</strong>（眺め・見ること）", "• <strong>point</strong>（地点）", "➔ 観点・見地"] },
+      outlook: { formula: "out ＋ look", lines: ["• <strong>out</strong>（外を）", "• <strong>look</strong>（見る）", "➔ 見通し・展望"] },
+      output: { formula: "out ＋ put", lines: ["• <strong>out</strong>（外へ）", "• <strong>put</strong>（出す・置く）", "➔ 生産高・出力"] },
+      outcome: { formula: "out ＋ come", lines: ["• <strong>out</strong>（外へ）", "• <strong>come</strong>（出てくる）", "➔ 結果・成果"] },
+      understand: { formula: "under ＋ stand", lines: ["• <strong>under</strong>（〜の間に）", "• <strong>stand</strong>（立つ）", "➔ その真ん中に立って全体を把握する"] },
+      undertake: { formula: "under ＋ take", lines: ["• <strong>under</strong>（下で）", "• <strong>take</strong>（受け止める）", "➔ 引き受ける・着手する"] },
+      overtake: { formula: "over ＋ take", lines: ["• <strong>over</strong>（越えて）", "• <strong>take</strong>（つかむ）", "➔ 追いつく・追い越す"] },
+      overcome: { formula: "over ＋ come", lines: ["• <strong>over</strong>（越えて）", "• <strong>come</strong>（来る）", "➔ 乗り越える・克服する"] },
+      overwhelm: { formula: "over ＋ whelm", lines: ["• <strong>over</strong>（上から）", "• <strong>whelm</strong>（覆い尽くす）", "➔ 圧倒する・参らせる"] }
+    };
+
+    // --- 形態素・語源パーツ分解データベース ---
+    const PREFIX_RULES = [
+      ["contra", "contra-", "反対に・逆に"], ["counter", "counter-", "対抗して"],
+      ["circum", "circum-", "周囲に"], ["inter", "inter-", "相互に・間に"],
+      ["trans", "trans-", "越えて・向こうへ"], ["super", "super-", "超えて・上に"],
+      ["under", "under-", "下に・不足"], ["over", "over-", "越えて・過度に"],
+      ["extra", "extra-", "外に・超えて"], ["intro", "intro-", "内へ"],
+      ["anti", "anti-", "反対・対抗"], ["auto", "auto-", "自ら"],
+      ["tele", "tele-", "遠く"], ["para", "para-", "そばに・類似"],
+      ["comp", "com-", "共に・完全に"], ["comm", "com-", "共に・完全に"],
+      ["conn", "con-", "共に・完全に"], ["coll", "col-", "共に"],
+      ["corr", "cor-", "共に"], ["conf", "con-", "共に・完全に"],
+      ["cons", "con-", "共に・完全に"], ["cont", "con-", "共に・完全に"],
+      ["conc", "con-", "共に・完全に"], ["cond", "con-", "共に・完全に"],
+      ["conv", "con-", "共に・完全に"], ["cong", "con-", "共に・完全に"],
+      ["con", "con-", "共に・完全に"], ["com", "com-", "共に・完全に"],
+      ["dis", "dis-", "分離・否定"], ["dif", "dis-", "分離・否定"],
+      ["pre", "pre-", "前もって・前に"], ["pro", "pro-", "前へ・公に"],
+      ["sub", "sub-", "下へ・従属"], ["sup", "sub-", "下から・下へ"],
+      ["sus", "sub-", "下から上へ"], ["suc", "sub-", "下へ・後に"],
+      ["sur", "sur-", "上に・超えて"], ["per", "per-", "通り抜けて・完全に"],
+      ["re", "re-", "再び・後ろへ"], ["ex", "ex-", "外へ"],
+      ["ef", "ex-", "外へ・結果"], ["in", "in-", "中へ / 否定"],
+      ["im", "in-", "中へ / 否定"], ["il", "in-", "否定"],
+      ["ir", "in-", "否定"], ["de", "de-", "下へ・離れて・強意"],
+      ["ab", "ab-", "離れて"], ["ad", "ad-", "〜の方へ・付加"],
+      ["ac", "ad-", "〜の方へ"], ["af", "ad-", "〜の方へ"],
+      ["ap", "ad-", "〜の方へ"], ["ar", "ad-", "〜の方へ"],
+      ["as", "ad-", "〜の方へ"], ["at", "ad-", "〜の方へ"],
+      ["ob", "ob-", "〜に向かって・反対"], ["op", "ob-", "対抗して"],
+      ["be", "be-", "強意・まわり"]
+    ];
+
+    const SUFFIX_RULES = [
+      ["tion", "-tion", "名詞を作る語尾（行為・状態）"],
+      ["sion", "-sion", "名詞を作る語尾（行為・状態）"],
+      ["ment", "-ment", "名詞を作る語尾（動作・結果）"],
+      ["ence", "-ence", "名詞を作る語尾（性質・状態）"],
+      ["ance", "-ance", "名詞を作る語尾（性質・状態）"],
+      ["able", "-able", "形容詞を作る語尾（〜できる）"],
+      ["ible", "-ible", "形容詞を作る語尾（〜できる）"],
+      ["tive", "-tive", "形容詞・名詞を作る語尾（性質）"],
+      ["sive", "-sive", "形容詞・名詞を作る語尾（性質）"],
+      ["ive", "-ive", "形容詞・名詞を作る語尾（性質）"],
+      ["ful", "-ful", "形容詞を作る語尾（〜に満ちた）"],
+      ["less", "-less", "形容詞を作る語尾（〜のない）"],
+      ["ous", "-ous", "形容詞を作る語尾（〜の特徴を持つ）"],
+      ["ious", "-ious", "形容詞を作る語尾（〜の特徴を持つ）"],
+      ["ize", "-ize", "動詞を作る語尾（〜化する）"],
+      ["ise", "-ise", "動詞を作る語尾（〜化する）"],
+      ["ify", "-ify", "動詞を作る語尾（〜にする）"],
+      ["ate", "-ate", "動詞・形容詞を作る語尾"],
+      ["ity", "-ity", "名詞を作る語尾（性質・状態）"],
+      ["ure", "-ure", "名詞を作る語尾（行為・結果）"],
+      ["al", "-al", "形容詞・名詞を作る語尾"],
+      ["ar", "-ar", "形容詞を作る語尾"],
+      ["ic", "-ic", "形容詞を作る語尾"],
+      ["ly", "-ly", "副詞・形容詞を作る語尾"]
+    ];
+
+    const ROOT_RULES = [
+      ["spect", "spect", "見る (look)"], ["spic", "spic", "見る (look)"],
+      ["dict", "dict", "言う (say, speak)"], ["struct", "struct", "建てる・積む (build)"],
+      ["duct", "duct", "導く (lead)"], ["duce", "duce", "導く (lead)"],
+      ["tract", "tract", "引く (pull, draw)"], ["port", "port", "運ぶ (carry)"],
+      ["press", "press", "押す (press)"], ["pose", "pose", "置く (put, place)"],
+      ["pone", "pone", "置く (put, place)"], ["posit", "posit", "置く (put, place)"],
+      ["scribe", "scribe", "書く (write)"], ["script", "script", "書く (write)"],
+      ["ceive", "ceive", "つかむ・取る (take)"], ["cept", "cept", "つかむ・取る (take)"],
+      ["tain", "tain", "保つ・維持する (hold)"], ["ten", "ten", "保つ・伸ばす (hold)"],
+      ["fer", "fer", "運ぶ・生む (carry, bear)"], ["mit", "mit", "送る (send)"],
+      ["miss", "miss", "送る (send)"], ["pend", "pend", "ぶら下がる・払う (hang, weigh)"],
+      ["sist", "sist", "立つ (stand)"], ["stitut", "stitut", "立てる・据える (stand)"],
+      ["vert", "vert", "向ける・回す (turn)"], ["vers", "vers", "向ける・回す (turn)"],
+      ["ven", "ven", "来る (come)"], ["vent", "vent", "来る (come)"],
+      ["val", "val", "価値がある・強い (strong, worthy)"],
+      ["vid", "vid", "見る (see)"], ["vis", "vis", "見る (see)"],
+      ["viv", "viv", "生きる (live)"], ["vit", "vit", "命・生きる (life)"],
+      ["voc", "voc", "呼ぶ・声 (call, voice)"], ["vok", "vok", "呼ぶ・声 (call, voice)"],
+      ["clud", "clud", "閉じる (close)"], ["clus", "clus", "閉じる (close)"],
+      ["cred", "cred", "信じる (believe)"], ["cur", "cur", "走る・流れる (run)"],
+      ["fac", "fac", "作る・なす (make, do)"], ["fect", "fect", "作る・なす (make, do)"],
+      ["fic", "fic", "作る・なす (make, do)"], ["form", "form", "形作る (shape)"],
+      ["grad", "grad", "歩む・進む (step, walk)"], ["gress", "gress", "歩む・進む (step, walk)"],
+      ["ject", "ject", "投げる (throw)"], ["lect", "lect", "選ぶ・集める (choose, gather)"],
+      ["leg", "leg", "法律・読む (law, read)"], ["loc", "loc", "場所 (place)"],
+      ["log", "log", "言葉・論理 (word, thought)"], ["mem", "mem", "記憶・心 (mind, remember)"],
+      ["mot", "mot", "動く (move)"], ["mov", "mov", "動く (move)"],
+      ["nat", "nat", "生まれる (born)"], ["nov", "nov", "新しい (new)"],
+      ["ord", "ord", "順序・命令 (order)"], ["part", "part", "部分・分ける (part, divide)"],
+      ["pass", "pass", "通る・苦しむ (pass, suffer)"], ["path", "path", "感情・病気 (feeling)"],
+      ["pel", "pel", "押し出す (push, drive)"], ["puls", "puls", "押し出す (push, drive)"],
+      ["ple", "ple", "満たす (fill)"], ["pli", "pli", "折る・重ねる (fold)"],
+      ["ply", "ply", "折る・重ねる (fold)"], ["pop", "pop", "人々 (people)"],
+      ["prov", "prov", "試す・証明する (test, prove)"], ["prob", "prob", "試す・証明する (test, prove)"],
+      ["put", "put", "考える・計算する (think)"], ["quir", "quir", "求める・尋ねる (seek, ask)"],
+      ["quis", "quis", "求める・尋ねる (seek, ask)"], ["rect", "rect", "まっすぐ・導く (straight, rule)"],
+      ["rupt", "rupt", "破る・折れる (break)"], ["sci", "sci", "知る (know)"],
+      ["sect", "sect", "切る (cut)"], ["sens", "sens", "感じる (feel)"],
+      ["sent", "sent", "感じる (feel)"], ["sequ", "sequ", "続く (follow)"],
+      ["secut", "secut", "続く (follow)"], ["serv", "serv", "保つ・仕える (keep, serve)"],
+      ["sign", "sign", "印・合図 (mark)"], ["simil", "simil", "同じ・似ている (same)"],
+      ["sembl", "sembl", "同じ・集まる (same)"], ["solv", "solv", "解く・緩める (loosen)"],
+      ["spir", "spir", "息をする・精神 (breathe)"], ["spond", "spond", "約束する・答える (promise, answer)"],
+      ["strict", "strict", "引き締める (tight)"], ["strain", "strain", "引っ張る (draw tight)"],
+      ["tend", "tend", "伸ばす・向かう (stretch)"], ["tens", "tens", "張る (stretched)"],
+      ["tent", "tent", "張る・保つ (stretch, hold)"], ["term", "term", "限界・境界 (limit)"],
+      ["test", "test", "証言する・試す (witness)"], ["tribut", "tribut", "割り当てる・与える (give)"],
+      ["turb", "turb", "かき乱す (disturb)"], ["vac", "vac", "空っぽ (empty)"],
+      ["van", "van", "空っぽ・消える (empty)"], ["vict", "vict", "勝つ (conquer)"],
+      ["vinc", "vinc", "勝つ (conquer)"], ["volv", "volv", "巻く・回る (roll)"]
+    ];
+
+    function splitWordIntoSyllables(str) {
+      if (!str || str.length <= 4) return str;
+      const s = str.toLowerCase();
+      let chunked = s.replace(/([bcdfghjklmnpqrstvwxyz])\1/g, "$1・$1");
+      chunked = chunked.replace(/([aeiouy])([bcdfghjklmnpqrstvwxyz])([aeiouy])/g, "$1・$2$3");
+      chunked = chunked.replace(/([bcdfghjklmnpqrstvwxyz]{2,3})([aeiouy])/g, "・$1$2");
+      chunked = chunked.replace(/^[・\s]+|[・\s]+$/g, "").replace(/・{2,}/g, "・");
+      return chunked.length > 0 ? chunked : str;
+    }
+
+    function getWordPartsBreakdown(word) {
+      const w = word.toLowerCase();
+      if (COMPOUND_PARTS_DICT[w]) {
+        return {
+          formula: COMPOUND_PARTS_DICT[w].formula,
+          html: COMPOUND_PARTS_DICT[w].lines.join("<br>")
+        };
+      }
+
+      let prefixMatch = null;
+      let suffixMatch = null;
+      let rootMatch = null;
+
+      for (const [key, tag, meaning] of PREFIX_RULES) {
+        if (w.startsWith(key) && w.length > key.length + 2) {
+          prefixMatch = { tag, meaning, len: key.length };
+          break;
+        }
+      }
+      for (const [key, tag, meaning] of SUFFIX_RULES) {
+        if (w.endsWith(key) && w.length > key.length + 2) {
+          suffixMatch = { tag, meaning, len: key.length };
+          break;
+        }
+      }
+      for (const [key, tag, meaning] of ROOT_RULES) {
+        if (w.includes(key)) {
+          rootMatch = { tag, meaning };
+          break;
+        }
+      }
+
+      const partsArr = [];
+      const lines = [];
+
+      if (prefixMatch) {
+        partsArr.push(prefixMatch.tag);
+        lines.push(`• <strong>${prefixMatch.tag}</strong>（${prefixMatch.meaning}）`);
+      }
+
+      if (rootMatch) {
+        partsArr.push(rootMatch.tag);
+        lines.push(`• <strong>${rootMatch.tag}</strong>（${rootMatch.meaning}）`);
+      } else {
+        let core = w;
+        if (prefixMatch) core = core.slice(prefixMatch.len);
+        if (suffixMatch && core.length > suffixMatch.len) core = core.slice(0, -suffixMatch.len);
+
+        if (core.length >= 2) {
+          const coreDisplay = core.length >= 6 ? splitWordIntoSyllables(core) : core;
+          partsArr.push(coreDisplay);
+          lines.push(`• <strong>${coreDisplay}</strong>（中心の語幹・核）`);
+        }
+      }
+
+      if (suffixMatch && (!prefixMatch || w.length > prefixMatch.len + suffixMatch.len)) {
+        partsArr.push(suffixMatch.tag);
+        lines.push(`• <strong>${suffixMatch.tag}</strong>（${suffixMatch.meaning}）`);
+      }
+
+      if (partsArr.length <= 1) {
+        if (w.length >= 6) {
+          const rhythmic = splitWordIntoSyllables(w);
+          return {
+            formula: rhythmic,
+            html: `• <strong>${rhythmic}</strong>（発音・スペルのリズムで区切って暗記）`
+          };
+        } else {
+          return {
+            formula: `${word}`,
+            html: `• <strong>${word}</strong>（短めの基本語幹：意味と例文で覚える重要単語）`
+          };
+        }
+      }
+
+      return {
+        formula: partsArr.join(" ＋ "),
+        html: lines.join("<br>")
+      };
+    }
+
+    // --- 入試頻出コロケーション辞書 ---
+    const COLLOCATION_DB = {
+      believe: ["believe in ~ (〜の存在・価値を信じる)"],
+      consider: ["consider A (to be) B (AをBと見なす)"],
+      expect: ["expect A to do (Aが〜するのを予期する)"],
+      allow: ["allow A to do (Aが〜するのを許す)"],
+      concern: ["be concerned with ~ (〜に関係している)"],
+      provide: ["provide A with B (AにBを供給する)"],
+      deal: ["deal with ~ (〜に対処する、〜を扱う)"],
+      result: ["result in ~ (結果として〜になる)", "result from ~ (〜から生じる)"],
+      effect: ["have an effect on ~ (〜に影響を与える)"],
+      similar: ["be similar to ~ (〜に似ている)"],
+      force: ["force A to do (Aに無理やり〜させる)"],
+      object: ["object to -ing (〜することに反対する)"],
+      relate: ["be related to ~ (〜と関連がある)"],
+      refer: ["refer to A as B (AをBと呼ぶ・言及する)"],
+      compare: ["compare A with/to B (AをBと比較する)"],
+      lead: ["lead to ~ (〜につながる)"],
+      prevent: ["prevent A from -ing (Aが〜するのを妨げる)"],
+      focus: ["focus on ~ (〜に集中する)"],
+      familiar: ["be familiar with ~ (〜をよく知っている)"],
+      regard: ["regard A as B (AをBと見なす)"],
+      prefer: ["prefer A to B (BよりAを好む)"],
+      supply: ["supply A with B (AにBを供給する)"],
+      apply: ["apply for ~ (〜に申し込む)", "apply to ~ (〜に適用される)"],
+      depend: ["depend on ~ (〜に依存する、〜次第である)"],
+      suffer: ["suffer from ~ (〜に苦しむ)"],
+      aware: ["be aware of ~ (〜に気づいている)"],
+      responsible: ["be responsible for ~ (〜に責任がある)"],
+      associate: ["associate A with B (AからBを連想する)"],
+      respond: ["respond to ~ (〜に応答する)"],
+      engage: ["engage in ~ (〜に従事する)"],
+      succeed: ["succeed in -ing (〜に成功する)"],
+      adapt: ["adapt to ~ (〜に順応する)"],
+      replace: ["replace A with B (AをBに取り替える)"],
+      arise: ["arise from ~ (〜から生じる)"],
+      rely: ["rely on ~ (〜に頼る)"],
+      commit: ["commit oneself to ~ (〜に専念する)"],
+      complain: ["complain about/of ~ (〜について不平を言う)"],
+      warn: ["warn A of/against B (AにBを警告する)"],
+      divide: ["divide A into B (AをBに分割する)"],
+      distinguish: ["distinguish A from B (AとBを区別する)"],
+      confuse: ["confuse A with B (AをBと混同する)"],
+      compete: ["compete with A for B (BをめぐってAと競う)"],
+      remind: ["remind A of B (AにBを思い出させる)"],
+      participate: ["participate in ~ (〜に参加する)"],
+      belong: ["belong to ~ (〜に所属している)"],
+      combine: ["combine A with B (AとBを組み合わせる)"],
+      stick: ["stick to ~ (〜に固執する)"],
+      escape: ["escape from ~ (〜から逃れる)"],
+      capable: ["be capable of -ing (〜する能力がある)"],
+      willing: ["be willing to do (喜んで〜する)"],
+      eager: ["be eager to do (しきりに〜したがる)"],
+      insist: ["insist on -ing (〜することを断固要求する)"],
+      persuade: ["persuade A to do (Aを説得して〜させる)"],
+      convince: ["convince A of B (AにBを納得させる)"],
+      concentrate: ["concentrate on ~ (〜に集中する)"],
+      blame: ["blame A for B (Bのことで責める)", "blame B on A (BをAのせいにする)"],
+      oppose: ["be opposed to ~ (〜に反対である)"],
+      inform: ["inform A of B (AにBを知らせる)"],
+      contribute: ["contribute to ~ (〜に貢献する)"],
+      consist: ["consist of ~ (〜から成る)"],
+      differ: ["differ from ~ (〜と異なる)"],
+      expose: ["expose A to B (AをBにさらす)"],
+      conscious: ["be conscious of ~ (〜を意識している)"],
+      anxious: ["be anxious about ~ (〜を心配している)"],
+      discourage: ["discourage A from -ing (Aが〜するのを思いとどまらせる)"],
+      react: ["react to ~ (〜に反応する)"],
+      invest: ["invest in ~ (〜に投資する)"],
+      prohibit: ["prohibit A from -ing (Aが〜するのを禁止する)"],
+      forbid: ["forbid A to do (Aが〜するのを禁じる)"],
+      stare: ["stare at ~ (〜をじっと見つめる)"],
+      devote: ["devote A to B (AをBに捧げる)"],
+      restrict: ["restrict A to B (AをBに制限する)"],
+      attach: ["attach A to B (AをBに付ける)"],
+      cope: ["cope with ~ (〜にうまく対処する)"],
+      owe: ["owe A to B (AはBのおかげである)"],
+      apologize: ["apologize to A for B (BのことでAに謝る)"],
+      forgive: ["forgive A for B (AのBを許す)"],
+      correspond: ["correspond to/with ~ (〜と一致する)"],
+      attribute: ["attribute A to B (AをBのせいにする)"],
+      approve: ["approve of ~ (〜に賛成する)"],
+      protest: ["protest against ~ (〜に抗議する)"],
+      derive: ["derive A from B (BからAを引き出す)"],
+      yield: ["yield to ~ (〜に屈する)"],
+      reluctant: ["be reluctant to do (〜するのを渋る)"],
+      rob: ["rob A of B (AからBを奪う)"],
+      deprive: ["deprive A of B (AからBを奪う)"],
+      rid: ["get rid of ~ (〜を取り除く)"],
+      interfere: ["interfere with ~ (〜の邪魔をする)"],
+      accuse: ["accuse A of B (BのことでAを非難する)"],
+      impose: ["impose A on B (AをBに押しつける)"],
+      substitute: ["substitute A for B (Bの代わりにAを使う)"],
+      resort: ["resort to ~ (〜に訴える)"],
+      dedicate: ["dedicate A to B (AをBに捧げる)"],
+      equip: ["equip A with B (AにBを装備させる)"],
+      hesitate: ["hesitate to do (〜するのをためらう)"],
+      dispose: ["dispose of ~ (〜を処分する)"],
+      distract: ["distract A from B (AをBからそらす)"],
+      exclude: ["exclude A from B (AをBから締め出す)"],
+      withdraw: ["withdraw from ~ (〜から退く)"],
+      grateful: ["be grateful to A for B (BのことでAに感謝している)"],
+      fond: ["be fond of ~ (〜を好む)"],
+      accustom: ["be accustomed to -ing (〜に慣れている)"],
+      keen: ["be keen on ~ (〜に熱中している)"],
+      inclined: ["be inclined to do (〜する傾向がある)"],
+      superior: ["be superior to ~ (〜より優れている)"],
+      inferior: ["be inferior to ~ (〜より劣っている)"],
+      indifferent: ["be indifferent to ~ (〜に無関心である)"],
+      conform: ["conform to ~ (〜に従う)"],
+      confine: ["confine A to B (AをBに限定する)"],
+      compensate: ["compensate for ~ (〜を補償する)"],
+      coincide: ["coincide with ~ (〜と同時に起こる)"],
+      persist: ["persist in ~ (〜に固執する)"],
+      refrain: ["refrain from -ing (〜するのを控える)"],
+      strip: ["strip A of B (AからBを奪い取る)"],
+      congratulate: ["congratulate A on B (BのことでAを祝う)"],
+      hostile: ["be hostile to ~ (〜に敵意を持っている)"],
+      loyal: ["be loyal to ~ (〜に忠実である)"]
+    };
+
+    function detectPartOfSpeech(num, meaning) {
+      const mod = ((num - 1) % 100) + 1;
+      if (num <= 500 && mod >= 95) return "副詞・他";
+      if (num === 376 || num === 800) return "副詞・他";
+      if (mod <= 40) return "動詞";
+      if (mod >= 44 && mod <= 74) return "名詞";
+      if (mod >= 78 && mod <= 94) return "形容詞";
+      const clean = meaning.replace(/（.*?）|\(.*?\)|【.*?】/g, "").trim();
+      if (clean.startsWith("を") || clean.startsWith("に") || clean.endsWith("する") || clean.endsWith("る") || clean.endsWith("う") || clean.endsWith("く") || clean.endsWith("す") || clean.endsWith("つ") || clean.endsWith("む")) return "動詞";
+      if (clean.endsWith("な") || clean.endsWith("い") || clean.endsWith("の") || clean.endsWith("て")) return "形容詞";
+      return "名詞";
+    }
+
+    function parse1400String(rawText, existingMap = {}) {
+      const tokenRegex = /(\d+)([a-zA-Z]+)/g;
+      const matches = [];
+      let m;
+      while ((m = tokenRegex.exec(rawText)) !== null) {
+        const num = parseInt(m[1], 10);
+        if (num >= 1 && num <= 1400) {
+          if (matches.length === 0 || num > matches[matches.length - 1].num) {
+            matches.push({ num, word: m[2], startIndex: m.index, meaningStart: m.index + m[0].length });
+          }
+        }
+      }
+      const parsed = [];
+      for (let i = 0; i < matches.length; i++) {
+        const cur = matches[i];
+        const nextStart = (i + 1 < matches.length) ? matches[i + 1].startIndex : rawText.length;
+        const meaning = rawText.slice(cur.meaningStart, nextStart).trim();
+        const prev = existingMap[cur.num];
+        const pos = detectPartOfSpeech(cur.num, meaning);
+        const wLower = cur.word.toLowerCase();
+        const partsInfo = getWordPartsBreakdown(cur.word);
+
+        parsed.push({
+          id: "w" + cur.num,
+          num: cur.num,
+          word: cur.word,
+          meaning: meaning,
+          partOfSpeech: pos,
+          partsFormula: partsInfo.formula,
+          partsBreakdownHtml: partsInfo.html,
+          collocations: COLLOCATION_DB[wLower] || [`${cur.word} の基本語法`],
+          synonyms: [],
+          level: prev ? prev.level : 1,
+          failCount: prev ? prev.failCount : 0
+        });
+      }
+
+      const keywordMap = {};
+      parsed.forEach(item => {
+        const keys = item.meaning.replace(/（.*?）|\(.*?\)|【.*?】|を|に|と|が|の|な|する/g, "").split(/[、，,；／]/).map(s => s.trim()).filter(s => s.length >= 2);
+        keys.forEach(k => {
+          if (!keywordMap[k]) keywordMap[k] = [];
+          keywordMap[k].push(`#${item.num} ${item.word}`);
+        });
+      });
+      parsed.forEach(item => {
+        const related = new Set();
+        const keys = item.meaning.replace(/（.*?）|\(.*?\)|【.*?】|を|に|と|が|の|な|する/g, "").split(/[、，,；／]/).map(s => s.trim()).filter(s => s.length >= 2);
+        keys.forEach(k => {
+          (keywordMap[k] || []).forEach(ref => { if (!ref.startsWith(`#${item.num} `)) related.add(ref); });
+        });
+        item.synonyms = Array.from(related).slice(0, 4);
+      });
+      return parsed;
+    }
+
+    // --- ストレージと設定の初期化 ---
+    let savedWords = JSON.parse(localStorage.getItem("lexiforge1400_words")) || [];
+    const existingMap = {};
+    savedWords.forEach(w => { existingMap[w.num] = w; });
+    let words = parse1400String(RAW_1400_FULL, existingMap);
+    localStorage.setItem("lexiforge1400_words", JSON.stringify(words));
+
+    let profile = JSON.parse(localStorage.getItem("lexiforge1400_profile")) || {
+      streak: 1, lastDate: new Date().toISOString().slice(0, 10), xp: 0, totalReviews: 0, audioEnabled: true
+    };
+
+    let audioEnabled = profile.audioEnabled !== undefined ? profile.audioEnabled : true;
+    let onlyUnmasteredInQuiz = false;
+    let currentQuizTargetCount = 20;
+
+    let quizList = [];
+    let quizCurrentIdx = 0;
+    let quizCorrectCount = 0;
+    let quizWrongItems = [];
+    let isQuizAnswering = false;
+    let isRevengeMode = false;
+
+    function saveData() {
+      localStorage.setItem("lexiforge1400_words", JSON.stringify(words));
+      profile.audioEnabled = audioEnabled;
+      localStorage.setItem("lexiforge1400_profile", JSON.stringify(profile));
+      updateDashboard();
+    }
+
+    // --- 音声 ON/OFF 切り替え ---
+    function toggleAudio() {
+      audioEnabled = !audioEnabled;
+      updateAudioButtonUI();
+      saveData();
+    }
+
+    function updateAudioButtonUI() {
+      const btn = document.getElementById('btn-audio-toggle');
+      const icon = document.getElementById('audio-icon');
+      const text = document.getElementById('audio-text');
+      if (audioEnabled) {
+        btn.className = "flex items-center gap-1 text-xs font-bold px-2.5 py-1.5 rounded-lg bg-indigo-600/30 text-indigo-300 border border-indigo-500/40 active:scale-95 transition";
+        icon.textContent = "🔊";
+        text.textContent = "音: ON";
+      } else {
+        btn.className = "flex items-center gap-1 text-xs font-bold px-2.5 py-1.5 rounded-lg bg-slate-800 text-slate-400 border border-slate-700 active:scale-95 transition";
+        icon.textContent = "🔇";
+        text.textContent = "音: OFF";
+      }
+    }
+
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playSynthSound(type) {
+      if (!audioEnabled) return;
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      const now = audioCtx.currentTime;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      if (type === 'correct') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(523.25, now);
+        osc.frequency.setValueAtTime(659.25, now + 0.06);
+        osc.frequency.setValueAtTime(783.99, now + 0.12);
+        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+        osc.start(now); osc.stop(now + 0.25);
+      } else {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(155, now);
+        osc.frequency.linearRampToValueAtTime(110, now + 0.2);
+        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+        osc.start(now); osc.stop(now + 0.25);
+      }
+    }
+
+    function speakText(text) {
+      if (!audioEnabled || !('speechSynthesis' in window)) return;
+      window.speechSynthesis.cancel();
+      const uttr = new SpeechSynthesisUtterance(text);
+      uttr.lang = 'en-US';
+      uttr.rate = 0.95;
+      window.speechSynthesis.speak(uttr);
+    }
+
+    function speakCurrentQuestion() {
+      if (quizList[quizCurrentIdx]) speakText(quizList[quizCurrentIdx].word);
+    }
+
+    // --- 範囲絞り込み ---
+    function getFilteredWords() {
+      const val = document.getElementById('section-select').value;
+      let min = 1, max = 1400;
+      if (val && val !== 'all') {
+        const [a, b] = val.split('-').map(Number);
+        min = a; max = b;
+      }
+      const pos = document.getElementById('pos-filter').value;
+      return words.filter(w => {
+        const inRange = w.num >= min && w.num <= max;
+        const inPos = (pos === 'all' || w.partOfSpeech === pos);
+        const unmastered = !onlyUnmasteredInQuiz || w.level < 3;
+        return inRange && inPos && unmastered;
+      });
+    }
+
+    function onSectionChange() { applyCustomRange(); }
+
+    function applyCustomRange() {
+      const pool = getFilteredWords();
+      document.getElementById('active-pool-text').textContent = `対象: ${pool.length}語`;
+      updateDashboard();
+    }
+
+    function toggleUnmastered() {
+      onlyUnmasteredInQuiz = document.getElementById('unmastered-only-check').checked;
+      applyCustomRange();
+    }
+
+    function quickStartFromDash(count) {
+      switchTab('quiz');
+      setQuizCount(count);
+    }
+
+    function setQuizCount(count) {
+      currentQuizTargetCount = count;
+      document.getElementById('btn-count-20').className = count === 20
+        ? "px-2.5 py-1 rounded font-bold bg-indigo-600 text-white"
+        : "px-2.5 py-1 rounded font-bold bg-slate-800 text-slate-300";
+      document.getElementById('btn-count-100').className = count === 100
+        ? "px-2.5 py-1 rounded font-bold bg-indigo-600 text-white"
+        : "px-2.5 py-1 rounded font-bold bg-slate-800 text-slate-300";
+      startQuizSession(count);
+    }
+
+    // --- 4択クイズ ロジック ---
+    function startQuizSession(count) {
+      isRevengeMode = false;
+      const pool = getFilteredWords();
+      if (pool.length < 4) {
+        alert("選択範囲に対象単語が4語以上必要です。「未習得のみ」を解除するか別の範囲を選んでください。");
+        return;
+      }
+      const shuffled = [...pool].sort(() => 0.5 - Math.random());
+      quizList = shuffled.slice(0, Math.min(count, shuffled.length));
+      quizCurrentIdx = 0;
+      quizCorrectCount = 0;
+      quizWrongItems = [];
+
+      document.getElementById('quiz-result-card').classList.add('hidden');
+      document.getElementById('quiz-question-box').classList.remove('hidden');
+      document.getElementById('quiz-choices-grid').classList.remove('hidden');
+      document.getElementById('detail-explanation-card').classList.add('hidden');
+
+      renderQuizStep();
+    }
+
+    function startRevengeOnly() {
+      if (!quizWrongItems || quizWrongItems.length === 0) return;
+      isRevengeMode = true;
+      quizList = [...quizWrongItems].sort(() => 0.5 - Math.random());
+      quizCurrentIdx = 0;
+      quizCorrectCount = 0;
+      quizWrongItems = [];
+
+      document.getElementById('quiz-result-card').classList.add('hidden');
+      document.getElementById('quiz-question-box').classList.remove('hidden');
+      document.getElementById('quiz-choices-grid').classList.remove('hidden');
+      document.getElementById('detail-explanation-card').classList.add('hidden');
+
+      renderQuizStep();
+    }
+
+    function renderQuizStep() {
+      isQuizAnswering = false;
+      const total = quizList.length;
+      const target = quizList[quizCurrentIdx];
+
+      document.getElementById('quiz-progress-text').textContent = `${quizCurrentIdx + 1} / ${total}`;
+      document.getElementById('quiz-correct-count').textContent = quizCorrectCount;
+      document.getElementById('quiz-progress-bar').style.width = `${((quizCurrentIdx) / total) * 100}%`;
+
+      document.getElementById('q-number').textContent = `No.${target.num}`;
+      document.getElementById('q-pos').textContent = target.partOfSpeech;
+      document.getElementById('q-word').textContent = target.word;
+      document.getElementById('q-feedback-text').textContent = isRevengeMode ? "🔥 リベンジ再出題中" : "意味をタップしてください";
+      document.getElementById('q-feedback-text').className = "text-xs font-bold h-4 text-slate-400";
+
+      document.getElementById('detail-explanation-card').classList.add('hidden');
+
+      speakText(target.word);
+
+      const samePos = words.filter(w => w.num !== target.num && w.partOfSpeech === target.partOfSpeech);
+      const source = samePos.length >= 3 ? samePos : words.filter(w => w.num !== target.num);
+      const distractors = source.sort(() => 0.5 - Math.random()).slice(0, 3);
+      const choices = [target, ...distractors].sort(() => 0.5 - Math.random());
+
+      const container = document.getElementById('quiz-choices-grid');
+      container.innerHTML = "";
+      choices.forEach((c, idx) => {
+        const btn = document.createElement('button');
+        btn.id = `quiz-choice-${idx}`;
+        btn.className = "w-full p-4 rounded-xl bg-slate-900 border border-slate-800 text-left font-bold text-sm text-slate-200 active:scale-[0.98] transition shadow";
+        btn.innerHTML = `<span class="inline-block w-5 text-indigo-400 text-xs font-black">${idx+1}.</span> ${c.meaning}`;
+        btn.onclick = () => handleChoiceTap(c.num === target.num, target, btn);
+        container.appendChild(btn);
+      });
+    }
+
+    function handleChoiceTap(isCorrect, target, clickedBtn) {
+      if (isQuizAnswering) return;
+      isQuizAnswering = true;
+      profile.totalReviews += 1;
+
+      const feedback = document.getElementById('q-feedback-text');
+
+      if (isCorrect) {
+        playSynthSound('correct');
+        quizCorrectCount++;
+        target.level = Math.min(5, Math.max(3, target.level + 1));
+        clickedBtn.className = "w-full p-4 rounded-xl bg-emerald-600 border border-emerald-400 text-white font-bold text-sm shadow";
+        feedback.textContent = `⭕ 正解！ No.${target.num} ${target.word} = ${target.meaning}`;
+        feedback.className = "text-xs font-bold h-4 text-emerald-400";
+      } else {
+        playSynthSound('wrong');
+        target.failCount = (target.failCount || 0) + 1;
+        target.level = Math.max(1, target.level - 1);
+        if (!quizWrongItems.some(w => w.num === target.num)) {
+          quizWrongItems.push(target);
+        }
+        clickedBtn.className = "w-full p-4 rounded-xl bg-rose-700 border border-rose-400 text-white font-bold text-sm shadow";
+        feedback.textContent = `❌ 不正解！ 正解は「${target.meaning}」`;
+        feedback.className = "text-xs font-bold h-4 text-rose-400";
+      }
+
+      for (let i = 0; i < 4; i++) {
+        const b = document.getElementById(`quiz-choice-${i}`);
+        if (b) b.disabled = true;
+      }
+
+      showInlineExplanation(target);
+    }
+
+    function showInlineExplanation(target) {
+      document.getElementById('exp-word-title').textContent = `${target.word} (No.${target.num})`;
+      document.getElementById('exp-correct-meaning').textContent = target.meaning;
+      document.getElementById('exp-parts-formula').textContent = target.partsFormula;
+      document.getElementById('exp-parts-breakdown').innerHTML = target.partsBreakdownHtml;
+      document.getElementById('exp-collocation').textContent = (target.collocations || []).join(" / ");
+      document.getElementById('exp-synonyms').textContent = (target.synonyms && target.synonyms.length > 0) ? target.synonyms.join(", ") : "同義グループなし";
+
+      const card = document.getElementById('detail-explanation-card');
+      card.classList.remove('hidden');
+      card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function goToNextQuestion() {
+      quizCurrentIdx++;
+      if (quizCurrentIdx >= quizList.length) {
+        finishQuiz();
+      } else {
+        renderQuizStep();
+      }
+    }
+
+    function finishQuiz() {
+      saveData();
+      const total = quizList.length;
+      const rate = Math.round((quizCorrectCount / total) * 100);
+
+      document.getElementById('quiz-question-box').classList.add('hidden');
+      document.getElementById('quiz-choices-grid').classList.add('hidden');
+      document.getElementById('detail-explanation-card').classList.add('hidden');
+      document.getElementById('quiz-result-card').classList.remove('hidden');
+
+      document.getElementById('res-score-detail').textContent = `${total}問中 ${quizCorrectCount}問正解`;
+      document.getElementById('res-score-rate').textContent = `${rate}%`;
+
+      const retryBox = document.getElementById('retry-action-box');
+      const wrongList = document.getElementById('wrong-accordion-list');
+
+      if (quizWrongItems.length === 0) {
+        retryBox.classList.add('hidden');
+        wrongList.innerHTML = `<div class="p-3 rounded-lg bg-emerald-950/40 border border-emerald-500/40 text-emerald-300 font-bold text-xs text-center">🎉 全問正解です！間違えた単語はありません！</div>`;
+      } else {
+        retryBox.classList.remove('hidden');
+        document.getElementById('retry-count-badge').textContent = quizWrongItems.length;
+
+        wrongList.innerHTML = quizWrongItems.map(w => `
+          <details class="bg-slate-950 border border-rose-900/40 rounded-xl overflow-hidden group">
+            <summary class="p-3 text-xs font-bold flex items-center justify-between cursor-pointer list-none bg-slate-900/60">
+              <div class="flex items-center gap-2">
+                <span class="text-indigo-400">No.${w.num}</span>
+                <span class="text-white text-sm">${w.word}</span>
+                <span class="text-emerald-400">${w.meaning}</span>
+              </div>
+              <span class="text-indigo-400 group-open:rotate-180 transition text-[11px]">▼ 語源区切り</span>
+            </summary>
+            <div class="p-3 bg-slate-950/90 border-t border-slate-800 text-[11px] space-y-2">
+              <div class="bg-indigo-950/40 border border-indigo-500/30 p-2 rounded-lg">
+                <div class="text-cyan-300 font-mono font-bold mb-1">${w.partsFormula}</div>
+                <div class="text-slate-300 leading-relaxed">${w.partsBreakdownHtml}</div>
+              </div>
+              <div><strong class="text-cyan-300">🔗 コロケ:</strong> <span class="text-slate-300">${(w.collocations || []).join(" / ")}</span></div>
+              <div><strong class="text-amber-300">🔄 類義:</strong> <span class="text-slate-300">${(w.synonyms || []).join(", ") || "なし"}</span></div>
+            </div>
+          </details>
+        `).join("");
+      }
+    }
+
+    // --- ダッシュボード描画 ---
+    function updateDashboard() {
+      const totalMastered = words.filter(w => w.level >= 3).length;
+      const overallRate = Math.round((totalMastered / words.length) * 100);
+      document.getElementById('stat-overall-badge').textContent = `総習得 ${overallRate}%`;
+      document.getElementById('stat-streak').textContent = profile.streak;
+
+      const listContainer = document.getElementById('section-progress-list');
+      let html = "";
+      for (let s = 1; s <= 14; s++) {
+        const min = (s - 1) * 100 + 1;
+        const max = s * 100;
+        const secWords = words.filter(w => w.num >= min && w.num <= max);
+        const mastered = secWords.filter(w => w.level >= 3).length;
+        const rate = Math.round((mastered / 100) * 100);
+
+        html += `
+          <div class="bg-slate-900 border border-slate-800 p-3 rounded-xl flex items-center justify-between gap-3">
+            <div class="w-24 shrink-0">
+              <div class="text-xs font-black text-indigo-300">Section ${s}</div>
+              <div class="text-[10px] text-slate-400">${min}〜${max}</div>
+            </div>
+
+            <div class="flex-1">
+              <div class="flex items-center justify-between text-[11px] mb-1">
+                <span class="text-slate-400">${mastered}/100語</span>
+                <span class="font-black ${rate >= 80 ? 'text-emerald-400' : rate >= 40 ? 'text-cyan-400' : 'text-slate-300'}">${rate}%</span>
+              </div>
+              <div class="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+                <div class="h-full bg-emerald-500 transition-all duration-300" style="width: ${rate}%"></div>
+              </div>
+            </div>
+
+            <button onclick="launchSectionTest(${s})" class="px-3 py-1.5 rounded-lg bg-indigo-600/30 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/40 text-xs font-bold shrink-0 transition">
+              テスト
+            </button>
+          </div>
+        `;
+      }
+      listContainer.innerHTML = html;
+    }
+
+    function launchSectionTest(secIndex) {
+      const min = (secIndex - 1) * 100 + 1;
+      const max = secIndex * 100;
+      document.getElementById('section-select').value = `${min}-${max}`;
+      document.getElementById('pos-filter').value = 'all';
+      applyCustomRange();
+      switchTab('quiz');
+      setQuizCount(20);
+    }
+
+    function renderManageList() {
+      const q = (document.getElementById('search-box').value || "").toLowerCase();
+      const filtered = words.filter(w =>
+        w.word.toLowerCase().includes(q) ||
+        w.meaning.includes(q) ||
+        String(w.num) === q
+      );
+      document.getElementById('manage-count-badge').textContent = `${filtered.length}語`;
+      const container = document.getElementById('word-list-table');
+      container.innerHTML = filtered.slice(0, 150).map(w => `
+        <div class="bg-slate-900 px-3 py-2.5 rounded-lg border border-slate-800 text-xs flex items-center justify-between gap-2">
+          <div class="flex items-center gap-2">
+            <span class="text-indigo-400 font-bold w-12 shrink-0">No.${w.num}</span>
+            <span class="text-white font-bold text-sm w-28 shrink-0">${w.word}</span>
+            <span class="text-emerald-400">${w.meaning}</span>
+          </div>
+          <span class="px-2 py-0.5 rounded text-[10px] font-bold ${w.level >= 3 ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-800 text-slate-400'} shrink-0">
+            ${w.level >= 3 ? '習得済' : '未定着'}
+          </span>
+        </div>
+      `).join("");
+    }
+
+    function switchTab(tab) {
+      ['dashboard', 'quiz', 'manage'].forEach(t => document.getElementById(`view-${t}`).classList.add('hidden'));
+      ['dashboard', 'quiz', 'manage'].forEach(t => {
+        document.getElementById(`tab-${t}`).className = "py-2 rounded-lg text-slate-400 hover:text-white";
+      });
+      document.getElementById(`tab-${tab}`).className = "py-2 rounded-lg bg-indigo-600 text-white";
+      document.getElementById(`view-${tab}`).classList.remove('hidden');
+
+      if (tab === 'quiz' && quizList.length === 0) {
+        startQuizSession(20);
+      }
+      if (tab === 'manage') renderManageList();
+      updateDashboard();
+    }
+
+    // キーボードショートカット (1〜4で回答、Space/Enterで次へ)
+    window.addEventListener('keydown', (e) => {
+      if (document.getElementById('view-quiz').classList.contains('hidden')) return;
+      if (!isQuizAnswering && ['1', '2', '3', '4'].includes(e.key)) {
+        const btn = document.getElementById(`quiz-choice-${parseInt(e.key, 10) - 1}`);
+        if (btn) btn.click();
+      } else if (isQuizAnswering && (e.code === 'Space' || e.code === 'Enter')) {
+        e.preventDefault();
+        goToNextQuestion();
+      }
+    });
+
+    // 初期起動
+    setupPWA();
+    updateAudioButtonUI();
+    applyCustomRange();
+  </script>
+</body>
+</html>
 
